@@ -17,7 +17,7 @@ import torch
 import torch.nn as nn
 
 from src.data_utils import load_index
-from src.data_utils import load_aux_graph # Changes made here
+from src.data_utils import load_aux_graph
 from src.data_utils import NO_OP_ENTITY_ID, NO_OP_RELATION_ID
 from src.data_utils import DUMMY_ENTITY_ID, DUMMY_RELATION_ID
 from src.data_utils import START_RELATION_ID
@@ -94,11 +94,9 @@ class KnowledgeGraph(nn.Module):
             with open(adj_list_path, 'rb') as f:
                 self.adj_list = pickle.load(f)
             self.vectorize_action_space(data_dir)
-        else: # Changes made here
+        else:
             if self.args.inference:
                 self.entity2id_aug, self.id2entity_aug, self.adj_list = load_aux_graph(data_dir)
-            #print(len(self.entity2id))
-            #print(len(self.relation2id))
             print('Sanity check: {} seen+unseen entities loaded'.format(len(self.entity2id_aug)))
 
     def vectorize_action_space(self, data_dir):
@@ -111,13 +109,13 @@ class KnowledgeGraph(nn.Module):
                 for line in f:
                     e, score = line.strip().split(':')
                     e = e.strip()
-                    if e in self.entity2id: # Changes made here
+                    if e in self.entity2id:
                         e_id = self.entity2id[e]
                         score = float(score)
                         pgrk_scores[e_id] = score
             return pgrk_scores
 
-        if self.args.inference: # Changes made here
+        if self.args.inference:
             self.entity2id_aug, self.id2entity_aug, self.adj_list = load_aux_graph(data_dir)
         print('Sanity check: {} seen+unseen entities loaded'.format(len(self.entity2id_aug)))
 
@@ -144,7 +142,7 @@ class KnowledgeGraph(nn.Module):
                 if len(action_space) + 1 >= self.bandwidth:
                     # Base graph pruning
                     sorted_action_space = \
-                        sorted(action_space, key=lambda x: page_rank_scores[x[1]] if x[1] in page_rank_scores else 0, reverse=True) # Changes made here
+                        sorted(action_space, key=lambda x: page_rank_scores[x[1]] if x[1] in page_rank_scores else 0, reverse=True)
                     action_space = sorted_action_space[:self.bandwidth]
             action_space.insert(0, (NO_OP_RELATION_ID, e1))
             return action_space
@@ -175,7 +173,7 @@ class KnowledgeGraph(nn.Module):
                     unique_r_space[i, j] = r
             return int_var_cuda(unique_r_space)
 
-        if self.args.inference: # Changes made here
+        if self.args.inference:
             num_entities = self.num_aug_entities
         else:
             num_entities = self.num_entities
@@ -186,9 +184,9 @@ class KnowledgeGraph(nn.Module):
             """
             self.action_space_buckets = {}
             action_space_buckets_discrete = collections.defaultdict(list)
-            self.entity2bucketid = torch.zeros(num_entities, 2).long() # changes made here self.num_entities
+            self.entity2bucketid = torch.zeros(num_entities, 2).long()
             num_facts_saved_in_action_table = 0
-            for e1 in range(num_entities):  # changes made here self.num_entities
+            for e1 in range(num_entities):
                 action_space = get_action_space(e1)
                 key = int(len(action_space) / self.args.bucket_interval) + 1
                 self.entity2bucketid[e1, 0] = key
@@ -196,7 +194,7 @@ class KnowledgeGraph(nn.Module):
                 action_space_buckets_discrete[key].append(action_space)
                 num_facts_saved_in_action_table += len(action_space)
             print('Sanity check: {} facts saved in action table'.format(
-                num_facts_saved_in_action_table - num_entities))  # changes made here self.num_entities
+                num_facts_saved_in_action_table - num_entities))
             for key in action_space_buckets_discrete:
                 print('Vectorizing action spaces bucket {}...'.format(key))
                 self.action_space_buckets[key] = vectorize_action_space(
@@ -204,7 +202,7 @@ class KnowledgeGraph(nn.Module):
         else:
             action_space_list = []
             max_num_actions = 0
-            for e1 in range(num_entities): # changes made here self.num_entities
+            for e1 in range(num_entities):
                 action_space = get_action_space(e1)
                 action_space_list.append(action_space)
                 if len(action_space) > max_num_actions:
@@ -249,7 +247,7 @@ class KnowledgeGraph(nn.Module):
         add_object(self.dummy_e, self.dummy_e, self.dummy_r, train_objects)
         add_object(self.dummy_e, self.dummy_e, self.dummy_r, dev_objects)
         add_object(self.dummy_e, self.dummy_e, self.dummy_r, all_objects)
-        for file_name in ['raw.kb', 'train.triples', 'dev.triples']: # Changes made here #, 'test.triples'
+        for file_name in ['raw.kb', 'train.triples', 'dev.triples']:
             if 'NELL' in self.args.data_dir and self.args.test and file_name == 'train.triples':
                 continue
             with open(os.path.join(data_dir, file_name), encoding='utf-8') as f:
@@ -274,7 +272,7 @@ class KnowledgeGraph(nn.Module):
                         add_subject(e2, e1, self.get_inv_relation_id(r), all_subjects)
                         add_object(e2, e1, self.get_inv_relation_id(r), all_objects)
 
-        if self.args.inference: # changes made here
+        if self.args.inference:
             with open(os.path.join(data_dir, 'test.triples'), encoding='utf-8') as f:
                 for line in f:
                     e1, e2, r = line.strip().split()
@@ -388,7 +386,7 @@ class KnowledgeGraph(nn.Module):
         e1, e2, r = triple
         return self.entity2id[e1], self.entity2id[e2], self.relation2id[r]
 
-    def triple2ids_aug(self, triple): # Changes made here
+    def triple2ids_aug(self, triple):
         e1, e2, r = triple
         return self.entity2id_aug[e1], self.entity2id_aug[e2], self.relation2id[r]
 
@@ -412,7 +410,7 @@ class KnowledgeGraph(nn.Module):
     def num_entities(self):
         return len(self.entity2id)
 
-    @property # Changes made here
+    @property
     def num_aug_entities(self):
         return len(self.entity2id_aug)
 

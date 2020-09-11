@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-data_dir="data/WN18RR"
+data_dir="data/WN18RR-Inductive"
 model="point"
 group_examples_by_query="False"
 use_action_space_bucketing="True"

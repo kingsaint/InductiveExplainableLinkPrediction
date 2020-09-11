@@ -14,8 +14,6 @@ from src.utils.ops import unique_max, var_cuda, zeros_var_cuda, int_var_cuda, in
 
 
 def beam_search(pn, e_s, q, e_t, kg, num_steps, beam_size, return_path_components=False):
-    #print(e_s)
-
     """
     Beam search from source.
 
@@ -129,7 +127,6 @@ def beam_search(pn, e_s, q, e_t, kg, num_steps, beam_size, return_path_component
     r_s = int_fill_var_cuda(e_s.size(), kg.dummy_start_r)
     seen_nodes = int_fill_var_cuda(e_s.size(), kg.dummy_e).unsqueeze(1)
     init_action = (r_s, e_s)
-    #print(init_action)
     # path encoder
     emb_e_s = pn.initialize_path(init_action, q, kg, 'eval')
     if kg.args.save_beam_search_paths:
@@ -141,11 +138,9 @@ def beam_search(pn, e_s, q, e_t, kg, num_steps, beam_size, return_path_component
     if return_path_components:
         log_action_probs = []
 
-    #print(init_action)
     action = init_action
     for t in range(num_steps):
         last_r, e = action
-        #print(e)
         assert(q.size() == e_s.size())
         assert(q.size() == e_t.size())
         assert(e.size()[0] % batch_size == 0)
@@ -156,7 +151,6 @@ def beam_search(pn, e_s, q, e_t, kg, num_steps, beam_size, return_path_component
         e_s = ops.tile_along_beam(e_s.view(batch_size, -1)[:, 0], k)
         e_t = ops.tile_along_beam(e_t.view(batch_size, -1)[:, 0], k)
         obs = [e_s, emb_e_s, q, e_t, t==0, t==(num_steps-1), last_r, seen_nodes]
-        #print(e_s)
         # one step forward in search
         db_outcomes, _, _ = pn.transit(
             e, obs, kg, 'eval', use_action_space_bucketing=True, merge_aspace_batching_outcome=True)
@@ -176,7 +170,6 @@ def beam_search(pn, e_s, q, e_t, kg, num_steps, beam_size, return_path_component
         if kg.args.save_beam_search_paths:
             adjust_search_trace(search_trace, action_offset)
             search_trace.append(action)
-    #print("---------------------")
 
     output_beam_size = int(action[0].size()[0] / batch_size)
     # [batch_size*beam_size] => [batch_size, beam_size]

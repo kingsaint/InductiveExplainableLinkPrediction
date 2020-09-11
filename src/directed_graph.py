@@ -17,14 +17,10 @@ class Concept2Index():
         self.num_relations = 0
 
         def load_index(input_path):
-
             index, rev_index = {}, {}
             with open(input_path, encoding='utf-8') as f:
-
                 for i, line in enumerate(f.readlines()):
-
                     v, _ = line.strip().split('\t')
-                    #print(v, i)
                     index[v] = i
                     rev_index[i] = v
             return index, rev_index
@@ -42,7 +38,7 @@ class UndirectedGraph(Concept2Index):
         self.seen_id2entity = self.id2entity.copy()
         self.training_graph = {}
         self.eval_graph = {}
-        self.data_files = [os.path.join(data_dir, 'train.triples'), os.path.join(data_dir, 'dev.triples')] # Changes made here os.path.join(data_dir, 'test.triples'),
+        self.data_files = [os.path.join(data_dir, 'train.triples'), os.path.join(data_dir, 'dev.triples')]
         if 'NELL' in data_dir:
             if 'test' in data_dir:
                 self.data_files = [os.path.join(data_dir, 'train.triples'), os.path.join(data_dir, 'train.dev.large.triples'), os.path.join(data_dir, 'dev.triples')]
@@ -97,7 +93,7 @@ class DirectedGraph(Concept2Index):
         self.eval_graph = {}
         self.aux_graph = {}
 
-        self.data_files = [os.path.join(data_dir, 'train.triples'), os.path.join(data_dir, 'dev.triples')] # Changes made here os.path.join(data_dir, 'test.triples'),
+        self.data_files = [os.path.join(data_dir, 'train.triples'), os.path.join(data_dir, 'dev.triples')]
         if 'NELL' in data_dir:
             if 'test' in data_dir:
                 self.data_files = [os.path.join(data_dir, 'train.dev.triples'), os.path.join(data_dir, 'train.dev.large.triples'),  os.path.join(data_dir, 'dev.triples')]
@@ -138,9 +134,9 @@ class DirectedGraph(Concept2Index):
         self.eval_graph[0] = [[2, 0]]
         self.training_graph[0] = [[2, 0]]
 
-        self.load_aux_graph(data_dir) # Changes made here
+        self.load_aux_graph(data_dir)
 
-    def load_aux_graph(self, data_dir): # Changes made here
+    def load_aux_graph(self, data_dir):
         self.aux_graph.update(self.eval_graph)
         data_files = ['aux.triples', 'test.triples']
         for file in data_files:
@@ -175,22 +171,6 @@ class DirectedGraph(Concept2Index):
                             self.aux_graph[e1_id] = []
                         if [r_id, e2_id] not in self.aux_graph[e1_id]:
                             self.aux_graph[e1_id].append([r_id, e2_id])
-
-    # A special case to deal with the scenarios where both entities are unknown (DEPRICATED)
-#                    if e1 not in self.seen_entity2id and e2 not in self.seen_entity2id:
-#                        e1_id = self.entity2id[e1]
-#                        r_id = self.rel2id[r]
-#                        r_inv_id = self.rel2id[r + '_inv']
-#                        e2_id = self.entity2id[e2]
-#                        if e1_id not in self.aux_graph:
-#                            self.aux_graph[e1_id] = []
-#                        if [r_id, e2_id] not in self.aux_graph[e1_id]:
-#                            self.aux_graph[e1_id].append([r_id, e2_id])
-#
-#                        if e2_id not in self.aux_graph:
-#                            self.aux_graph[e2_id] = []
-#                        if [r_inv_id, e1_id] not in self.aux_graph[e2_id]:
-#                            self.aux_graph[e2_id].append([r_inv_id, e1_id])
 
     def get_action_space(self, graph, e1, q):
         action_space = [[r, e2] for (r, e2) in graph[e1] if r != q and r != q + 1]

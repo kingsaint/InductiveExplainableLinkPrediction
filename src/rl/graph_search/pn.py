@@ -3,6 +3,9 @@
  All rights reserved.
  SPDX-License-Identifier: BSD-3-Clause
  For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
+
+ Modified by Rajarshi Bhowmik, 2020
+
  Graph Search Policy Network.
 """
 
@@ -14,13 +17,9 @@ import torch.cuda as cuda
 import src.utils.ops as ops
 from src.utils.ops import var_cuda, zeros_var_cuda
 
-#from src.kb_gat_3 import GAT
 from src.directed_graph import DirectedGraph
-#from src.GraphTransformer import GraphTransformer
-from src.GraphTransformer_2 import GraphTransformer
-from src.NoGraphTransformer import NoGraphTransformer
+from src.graph_transformer import GraphTransformer
 import time
-import pdb
 
 device = torch.device("cuda" if cuda.is_available() else "cpu")
 
@@ -42,8 +41,6 @@ class GraphSearchPolicy(nn.Module):
         self.ff_dropout_rate = args.ff_dropout_rate
         self.rnn_dropout_rate = args.rnn_dropout_rate
         self.action_dropout_rate = args.action_dropout_rate
-
-        # *******
         self.num_rollouts = args.num_rollouts
         self.bandwidth = args.bandwidth
         self.num_rollout_steps = args.num_rollout_steps
@@ -55,7 +52,7 @@ class GraphSearchPolicy(nn.Module):
         self.relation_only_in_path = args.relation_only_in_path
         self.path = None
 
-         # Directed Graph
+        # Directed Graph
         self.dg = DirectedGraph(args.data_dir)
 
         # Graph Transformer hyper params
@@ -103,10 +100,6 @@ class GraphSearchPolicy(nn.Module):
 
         e_s, emb_e_s, q, e_t, first_step, last_step, last_r, seen_nodes = obs
 
-        #print(e.size())
-        #print(q.size())
-        pdb.set_trace()
-
         # Representation of the current state (current node and other observations)
         Q = self.graph_transformer.dropout(self.graph_transformer.emb_r(q))
         H = self.path[-1][0][-1, :, :]
@@ -118,21 +111,19 @@ class GraphSearchPolicy(nn.Module):
                 E = emb_e_s
             else:
                 if mode == 'train':
-                    E, _ =  self.graph_transformer(e, q, self.dg.training_graph, self.dg.seen_id2entity, self.bandwidth, mode) #self.gat.dropout(self.gat.emb_e(e)) # Needs to be changed
+                    E, _ =  self.graph_transformer(e, q, self.dg.training_graph, self.dg.seen_id2entity, self.bandwidth, mode)
                 else:
                     E, _ =  self.graph_transformer(e, q, self.dg.eval_graph, self.dg.seen_id2entity, self.bandwidth, mode)
-            #print("E = ", E.size())
-            #print("E_s = ", E_s.size())
+
             if E.size()[0] != E_s.size(0):
                 expansion_size = int(E.size()[0]/E_s.size(0))
                 E_s = E_s.unsqueeze(1).expand(-1, expansion_size, -1)
                 E_s = torch.flatten(E_s, start_dim=0).view(-1, self.entity_dim)
             X = torch.cat([E, H, E_s, Q], dim=-1)
-        else: # Changes made here
+        else:
             if first_step:
                 E = emb_e_s
             else:
-                #E = self.gat.dropout(self.gat.emb_e(e))
                 if mode == 'train':
                     E, _ = self.graph_transformer(e, q, self.dg.training_graph, self.dg.seen_id2entity, self.bandwidth, mode)
                 else:
@@ -152,7 +143,6 @@ class GraphSearchPolicy(nn.Module):
 
         def policy_nn_fun(X2, action_space):
             (r_space, e_space), action_mask = action_space
-            pdb.set_trace()
             A = self.get_action_embedding((r_space, e_space), kg)
             action_dist = F.softmax(
                 torch.squeeze(A @ torch.unsqueeze(X2, 2), 2) - (1 - action_mask) * ops.HUGE_INT, dim=-1)
@@ -172,27 +162,16 @@ class GraphSearchPolicy(nn.Module):
             return action_space
 
         if use_action_space_bucketing:
-            """
-            
-            """
             db_outcomes = []
             entropy_list = []
             references = []
-            #print(e)
             db_action_spaces, db_references = self.get_action_space_in_buckets(e, obs, kg)
-            #print("length db_action_spaces =", len(db_action_spaces))
-            #print("length db_references =", len(db_references))
             for action_space_b, reference_b in zip(db_action_spaces, db_references):
-                #print("action_space_b = ", action_space_b)
-                #print("reference_b = ", reference_b)
-                #print("X2=", X2.size())
                 X2_b = X2[reference_b, :]
-                #print("X2_b =", X2_b)
                 action_dist_b, entropy_b = policy_nn_fun(X2_b, action_space_b)
                 references.extend(reference_b)
                 db_outcomes.append((action_space_b, action_dist_b))
                 entropy_list.append(entropy_b)
-                #print("I am here")
             inv_offset = [i for i, _ in sorted(enumerate(references), key=lambda x: x[1])]
             entropy = torch.cat(entropy_list, dim=0)[inv_offset]
             if merge_aspace_batching_outcome:
@@ -208,14 +187,9 @@ class GraphSearchPolicy(nn.Module):
             action_dist, entropy = policy_nn_fun(X2, action_space)
             db_outcomes = [(action_space, action_dist)]
             inv_offset = None
-
-        # print("Transit")
-        # print(db_outcomes)
-        #time.sleep(15)
         return db_outcomes, inv_offset, entropy
 
     def initialize_path(self, init_action, q, kg, mode):
-        # [batch_size, action_dim]
         '''
         if self.relation_only_in_path:
             init_action_embedding = kg.get_relation_embeddings(init_action[0])
@@ -226,18 +200,15 @@ class GraphSearchPolicy(nn.Module):
 
         if self.relation_only_in_path:
             if mode == 'train':
-                q = q.view(-1, self.num_rollouts)[:, 0] #.cpu().numpy().tolist()
-
+                q = q.view(-1, self.num_rollouts)[:, 0]
                 e_s = init_action[1]
-                e_s = e_s.view(-1, self.num_rollouts)[:, 0] #.cpu().numpy().tolist()
+                e_s = e_s.view(-1, self.num_rollouts)[:, 0]
                 emb_e_s, _ = self.graph_transformer(e_s, q, self.dg.training_graph, self.dg.seen_id2entity, self.bandwidth, 'train')
                 emb_e_s = emb_e_s.unsqueeze(1).expand(-1, self.num_rollouts, -1)
                 emb_e_s = torch.flatten(emb_e_s, start_dim=0).view(-1, self.entity_dim)
             else:
-                q = q #.cpu().numpy().tolist()
                 e_s = init_action[1]
-                #e_s = e_s.cpu().numpy().tolist()
-                if  self.args.inference:
+                if self.args.inference:
                     emb_e_s, _ = self.graph_transformer(e_s, q, self.dg.aux_graph, self.dg.seen_id2entity, self.bandwidth, 'test')
                 else:
                     emb_e_s, _ = self.graph_transformer(e_s, q, self.dg.eval_graph, self.dg.seen_id2entity, self.bandwidth, 'eval')
@@ -247,27 +218,18 @@ class GraphSearchPolicy(nn.Module):
             init_action_embedding = torch.cat([emb_r_0, emb_e_s], dim=-1)
 
         else:
-            #print("i'm here")
             if mode == 'train':
-                q = q.view(-1, self.num_rollouts)[:, 0] #.cpu().numpy().tolist()
-
+                q = q.view(-1, self.num_rollouts)[:, 0]
                 e_s = init_action[1]
-                e_s = e_s.view(-1, self.num_rollouts)[:, 0] #.cpu().numpy().tolist()
-                #print(e_s)
-                #print(q)
-                #time.sleep(30)
+                e_s = e_s.view(-1, self.num_rollouts)[:, 0]
+
                 emb_e_s, _ = self.graph_transformer(e_s, q, self.dg.training_graph, self.dg.seen_id2entity, self.bandwidth, 'train')
                 emb_e_s = emb_e_s.unsqueeze(1).expand(-1, self.num_rollouts, -1)
                 emb_e_s = torch.flatten(emb_e_s, start_dim=0).view(-1, self.entity_dim)
             else:
-                q = q #.cpu().numpy().tolist()
                 e_s = init_action[1]
-                e_s = e_s #.cpu().numpy().tolist()
-                #print(e_s)
-                #print(q)
-                if  self.args.inference:
+                if self.args.inference:
                     emb_e_s, _ = self.graph_transformer(e_s, q, self.dg.aux_graph, self.dg.seen_id2entity, self.bandwidth, 'test')
-                    #print(emb_e_s)
                 else:
                     emb_e_s, _ = self.graph_transformer(e_s, q, self.dg.eval_graph, self.dg.seen_id2entity, self.bandwidth, 'eval')
 
@@ -279,9 +241,6 @@ class GraphSearchPolicy(nn.Module):
         init_h = zeros_var_cuda([self.history_num_layers, len(init_action_embedding), self.history_dim])
         init_c = zeros_var_cuda([self.history_num_layers, len(init_action_embedding), self.history_dim])
         self.path = [self.path_encoder(init_action_embedding, (init_h, init_c))[1]]
-
-        #print(emb_e_s.size())
-
         return emb_e_s
 
     def update_path(self, action, kg, offset=None):
@@ -356,9 +315,7 @@ class GraphSearchPolicy(nn.Module):
         if collapse_entities:
             raise NotImplementedError
         else:
-            #print("e=", e)
             entity2bucketid = kg.entity2bucketid[e.tolist()]
-            #print("entity2bucketid", entity2bucketid)
             key1 = entity2bucketid[:, 0]
             key2 = entity2bucketid[:, 1]
             batch_ref = {}
@@ -387,8 +344,6 @@ class GraphSearchPolicy(nn.Module):
                 action_space_b = self.apply_action_masks(action_space_b, e_b, obs_b, kg)
                 db_action_spaces.append(action_space_b)
                 db_references.append(l_batch_refs)
-        #print("db_action_spaces = ", db_action_spaces)
-        #print("db_references = ", db_references )
         return db_action_spaces, db_references
 
     def get_action_space(self, e, obs, kg):
@@ -480,12 +435,10 @@ class GraphSearchPolicy(nn.Module):
                 - e is the destination entity.
         :param kg: Knowledge graph enviroment.
         """
-
-        #print("action=", action)
         r, e = action
         for i in range(e.size()[0]):
             e[i][e[i] >= kg.num_entities] = 0
-        #print(e)
+
         relation_embedding = self.graph_transformer.dropout(self.graph_transformer.emb_r(r))
         if self.relation_only:
             action_embedding = relation_embedding
@@ -495,27 +448,14 @@ class GraphSearchPolicy(nn.Module):
         return action_embedding
 
     def define_modules(self):
-        #self.gat = GAT(kg=self.dg, \
-        #               entity_dim=self.entity_dim, \
-        #               relation_dim=self.relation_dim, \
-        #               num_layers=self.num_rollout_steps, \
-        #               num_heads=self.num_heads, \
-        #               head_dim=self.head_dim, \
-        #               dropout=self.emb_dropout_rate, \
-        #               neighbor_dropout_rate=self.action_dropout_rate)
-
-        # self.graph_transformer = GraphTransformer(kg=self.dg, \
-        #                                           num_layers=1, \
-        #                                           num_heads=self.num_heads, \
-        #                                           dropout=self.emb_dropout_rate,\
-        #                                           embed_dim=self.entity_dim, \
-        #                                           hidden_dim=self.hidden_dim, \
-        #                                           neighbor_dropout_rate=self.action_dropout_rate)
-
-        self.graph_transformer = NoGraphTransformer(kg=self.dg, \
+        self.graph_transformer = GraphTransformer(kg=self.dg, \
+                                                  num_layers=1, \
+                                                  num_heads=self.num_heads, \
                                                   dropout=self.emb_dropout_rate,\
-                                                  embed_dim=self.entity_dim,\
-                                                  )
+                                                  embed_dim=self.entity_dim, \
+                                                  hidden_dim=self.hidden_dim, \
+                                                  neighbor_dropout_rate=self.action_dropout_rate)
+
         self.graph_transformer = self.graph_transformer.cuda()
 
         if self.relation_only:
@@ -529,10 +469,6 @@ class GraphSearchPolicy(nn.Module):
         self.W1Dropout = nn.Dropout(p=self.ff_dropout_rate)
         self.W2Dropout = nn.Dropout(p=self.ff_dropout_rate)
         if self.relation_only_in_path:
-            #self.path_encoder = nn.LSTM(input_size=self.relation_dim,
-            #                            hidden_size=self.history_dim,
-            #                           num_layers=self.history_num_layers,
-            #                            batch_first=True)
             self.path_encoder = nn.LSTM(input_size=self.action_dim,
                                         hidden_size=self.history_dim,
                                         num_layers=self.history_num_layers,
@@ -553,5 +489,5 @@ class GraphSearchPolicy(nn.Module):
                 elif 'weight' in name:
                     nn.init.xavier_normal_(param)
 
-            # Intitialize the parameters of GAT
+            # Intitialize the parameters of Graph Transformer
             self.graph_transformer.initialize_modules()

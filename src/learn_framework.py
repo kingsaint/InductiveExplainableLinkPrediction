@@ -265,11 +265,9 @@ class LFramework(nn.Module):
         out_tar = os.path.join(self.model_dir, 'checkpoint-{}.tar'.format(checkpoint_id))
         if is_best:
             best_path = os.path.join(self.model_dir, 'model_best.tar')
-            #shutil.copyfile(out_tar, best_path)
             torch.save(checkpoint_dict, best_path)
             print('=> best model updated \'{}\''.format(best_path))
         else:
-            #torch.save(checkpoint_dict, out_tar)
             print('=> saving checkpoint to \'{}\''.format(out_tar))
 
     def load_checkpoint(self, input_file):

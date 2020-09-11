@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-data_dir="data/FB15K-237"
+data_dir="data/FB15K-237-Inductive"
 model="point.rs.conve"
 group_examples_by_query="False"
 use_action_space_bucketing="True"

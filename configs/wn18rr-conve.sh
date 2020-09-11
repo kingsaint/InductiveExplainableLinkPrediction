@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-data_dir="data/WN18RR"
+data_dir="data/WN18RR-Inductive"
 model="conve"
 add_reversed_training_edges="True"
 group_examples_by_query="True"

@@ -44,8 +44,8 @@ def process_data():
     train_path = data_utils.get_train_path(args)
     dev_path = os.path.join(data_dir, 'dev.triples')
     test_path = os.path.join(data_dir, 'test.triples')
-    aux_path = os.path.join(data_dir, 'aux.triples') # Changes made here
-    data_utils.prepare_kb_envrioment(raw_kb_path, train_path, dev_path, test_path, aux_path, args.test, args.add_reverse_relations) # Changes made here
+    aux_path = os.path.join(data_dir, 'aux.triples')
+    data_utils.prepare_kb_envrioment(raw_kb_path, train_path, dev_path, test_path, aux_path, args.test, args.add_reverse_relations)
 
 def initialize_model_directory(args, random_seed=None):
     # add model parameter info to model directory
@@ -224,7 +224,6 @@ def construct_model(args):
             fn = DistMult(fn_args)
             fn_kg = KnowledgeGraph(fn_args)
         elif fn_model == 'conve':
-            #print("I am here", kg.num_entities)
             fn = ConvE(fn_args, kg.num_entities)
             fn_kg = KnowledgeGraph(fn_args)
         lf = RewardShapingPolicyGradient(args, kg, pn, fn_kg, fn)
@@ -343,16 +342,18 @@ def inference(lf):
             dev_path, entity_index_path, relation_index_path, seen_entities=seen_entities, verbose=False)
         test_data = data_utils.load_triples(
             test_path, entity_index_path, relation_index_path, seen_entities=seen_entities, verbose=False)
-        #print('Dev set performance:')
-        #pred_scores = lf.forward(dev_data, verbose=args.save_beam_search_paths)
-        #dev_metrics = src.eval.hits_and_ranks(dev_data, pred_scores, lf.kg.dev_objects, verbose=True)
-        #eval_metrics['dev'] = {}
-        #eval_metrics['dev']['hits_at_1'] = dev_metrics[0]
-        #eval_metrics['dev']['hits_at_3'] = dev_metrics[1]
-        #eval_metrics['dev']['hits_at_5'] = dev_metrics[2]
-        #eval_metrics['dev']['hits_at_10'] = dev_metrics[3]
-        #eval_metrics['dev']['mrr'] = dev_metrics[4]
-        #src.eval.hits_and_ranks(dev_data, pred_scores, lf.kg.all_objects, verbose=True)
+
+        print('Dev set performance:')
+        pred_scores = lf.forward(dev_data, verbose=args.save_beam_search_paths)
+        dev_metrics = src.eval.hits_and_ranks(dev_data, pred_scores, lf.kg.dev_objects, verbose=True)
+        eval_metrics['dev'] = {}
+        eval_metrics['dev']['hits_at_1'] = dev_metrics[0]
+        eval_metrics['dev']['hits_at_3'] = dev_metrics[1]
+        eval_metrics['dev']['hits_at_5'] = dev_metrics[2]
+        eval_metrics['dev']['hits_at_10'] = dev_metrics[3]
+        eval_metrics['dev']['mrr'] = dev_metrics[4]
+        src.eval.hits_and_ranks(dev_data, pred_scores, lf.kg.all_objects, verbose=True)
+
         print('Test set performance:')
         pred_scores = lf.forward(test_data, verbose=args.save_beam_search_paths)
         test_metrics = src.eval.hits_and_ranks(test_data, pred_scores, lf.kg.all_objects, verbose=True)

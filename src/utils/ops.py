@@ -75,7 +75,7 @@ def format_path(path_trace, kg):
         else:
             return kg.id2relation[relation_id]
 
-    def get_most_recent_entity(j): # Changes made here
+    def get_most_recent_entity(j):
         if int(path_trace[j][1]) in kg.id2entity:
             return kg.id2entity[int(path_trace[j][1])]
         else:

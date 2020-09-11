@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-data_dir="data/NELL-995"
+data_dir="data/NELL-995-Inductive"
 model="point"
 group_examples_by_query="False"
 use_action_space_bucketing="True"

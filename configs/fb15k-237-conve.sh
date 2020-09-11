@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-data_dir="data/FB15K-237"
+data_dir="data/FB15K-237-Inductive"
 model="conve"
 
 add_reversed_training_edges="True"
