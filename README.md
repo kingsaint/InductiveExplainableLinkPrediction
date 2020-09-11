@@ -25,7 +25,7 @@ For reward shaping, we used ConvE model.
 * Note: To train the RL models using reward shaping, make sure 1) you have pre-trained the embedding-based ConvE model and 2) set the file path pointers ```conve_state_dict_path``` to the pre-trained embedding-based models correctly 
 in the ```configs/<dataset>-rs.sh``` or ```configs/<dataset>.sh``` files.
 
-### Evaluate pretrained models
+### Evaluation
 To generate the evaluation results of a trained model, simply change the `--train` flag in the commands above to `--inference`. 
 
 For example, the following command performs inference with the RL models (policy gradient + reward shaping) and prints the evaluation results (on both dev and test sets).
