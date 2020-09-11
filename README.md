@@ -9,7 +9,7 @@ python 3.6+ <br>
 pytorch 1.4.0 <br>
 tqdm 4.9.0
 
-All experiments are run on NVIDIA TitanX GPUs with 24GB memory.
+All experiments are run on NVIDIA Titan RTX GPUs with 24GB memory.
 
 ### Data
 Processed data is provided in the ```data``` folder. 
