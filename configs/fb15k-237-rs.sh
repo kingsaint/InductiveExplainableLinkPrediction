@@ -31,9 +31,7 @@ beta=0.02
 relation_only="False"
 beam_size=128
 
-distmult_state_dict_path="model/FB15K-237-distmult-xavier-200-200-0.003-0.3-0.1/model_best.tar"
-complex_state_dict_path="model/FB15K-237-complex-RV-xavier-200-200-0.003-0.3-0.1/model_best.tar"
-conve_state_dict_path="model/FB15K-237-conve-RV-xavier-200-200-0.003-32-3-0.3-0.3-0.2-0.1/model_best.tar"
+conve_state_dict_path="model/FB15K-237-Inductive-conve-RV-xavier-200-200-0.003-32-3-0.3-0.3-0.2-0.1/model_best.tar"
 
 num_paths_per_entity=-1
 margin=-1
