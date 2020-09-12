@@ -11,7 +11,7 @@ tqdm 4.9.0
 
 All experiments are run on NVIDIA Titan RTX GPUs with 24GB memory.
 
-### 
+### Data Processing
 Run the following command to preprocess the datasets.
 ```
 ./experiment.sh configs/<dataset>.sh --process_data <gpu-ID>
