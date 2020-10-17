@@ -70,7 +70,7 @@ To change the hyperparameters and other experiment set up, start from the [confi
 ```
 @inproceedings{BhowmikDeMelo2020ExplainableKGReasoning,
   author    = {Bhowmik, Rajarshi and de Melo, Gerard},
-  title     = {A Joint Framework for Inductive Representation Learning and Explainable Reasoning in Knowledge Graphs},
+  title     = {Explainable Link Prediction for Emerging Entities in Knowledge Graphs},
   booktitle = {Proceedings of ISWC 2020},
   year      = {2020},
   eventdate = {2020-11-02/06},
