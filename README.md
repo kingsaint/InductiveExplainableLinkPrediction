@@ -1,4 +1,4 @@
-## Explainable Link Prediction for Emerging Entities in Knowledge Graph
+## Explainable Link Prediction for Emerging Entities in Knowledge Graphs
 
 ### Acknowledgement
 This repository is adopted from the [source code](https://github.com/salesforce/MultiHopKG) of the paper [Multi-Hop Knowledge Graph Reasoning with Reward Shaping. Lin et al., 2018](https://arxiv.org/abs/1808.10568)
